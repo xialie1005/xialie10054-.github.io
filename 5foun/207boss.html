@@ -1,0 +1,206 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+const calculateTimeLeft = (targetTime: Date) => {
+  const difference = +targetTime - +new Date();
+  let timeLeft = {};
+
+  if (difference > 0) {
+    timeLeft = {
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+    };
+  }
+
+  return timeLeft;
+};
+
+const formatDateTime = (date: Date) => {
+  return date.toLocaleString('zh-TW', {
+    timeZone: 'Asia/Taipei',
+    hour12: false,
+  });
+};
+
+const BossTimer = ({ bossName, initialTime, team, onReset }: { bossName: string, initialTime: number, team: string, onReset: () => void }) => {
+  const [targetTime, setTargetTime] = useState(new Date(new Date().getTime() + initialTime));
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(targetTime));
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimeLeft(calculateTimeLeft(targetTime));
+    }, 1000);
+
+    if (Object.keys(timeLeft).length === 0 && audioRef.current) {
+      audioRef.current.play();
+    }
+
+    return () => clearTimeout(timer);
+  }, [targetTime, timeLeft]);
+
+  const resetTimer = () => {
+    setTargetTime(new Date(new Date().getTime() + initialTime));
+    onReset();
+  };
+
+  const timerComponents: JSX.Element[] = [];
+
+  Object.keys(timeLeft).forEach((interval) => {
+    if (!timeLeft[interval as keyof typeof timeLeft]) {
+      return;
+    }
+
+    timerComponents.push(
+      <span key={interval} className="text-lg font-semibold">
+        {timeLeft[interval as keyof typeof timeLeft]} {interval}{" "}
+      </span>
+    );
+  });
+
+  return (
+    <div className="flex flex-col items-center mb-6 p-4 bg-white shadow-md rounded-lg w-full">
+      <h2 className="text-2xl font-bold mb-2 text-gray-800">{bossName}</h2>
+      <div className="text-lg mb-2 text-gray-600">刷新時間: {formatDateTime(targetTime)}</div>
+      {timerComponents.length ? (
+        <div className="text-xl text-gray-700 mb-2">
+          {timerComponents}
+        </div>
+      ) : (
+        <span className="text-xl text-green-600 mb-2">BOSS已刷新!</span>
+      )}
+      <div className="text-lg font-semibold text-gray-800 mb-2">隊伍: {team}</div>
+      <button
+        onClick={resetTimer}
+        className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300"
+      >
+        重置倒計時
+      </button>
+      <audio ref={audioRef} src="path/to/in-the-end-chorus.mp3" preload="auto"></audio>
+    </div>
+  );
+};
+
+const BossTimers = () => {
+  const bosses = [
+    { name: 'cave 1', refreshTime: 12 * 60 * 60 * 1000 },
+    { name: 'cave 2', refreshTime: 12 * 60 * 60 * 1000 },
+    { name: 'cave 3 left', refreshTime: 12 * 60 * 60 * 1000 },
+    { name: 'cave 3 right', refreshTime: 12 * 60 * 60 * 1000 },
+    { name: 'cave 4 up', refreshTime: 14 * 60 * 60 * 1000 },
+    { name: 'cave 4 down', refreshTime: 14 * 60 * 60 * 1000 },
+    { name: 'cave 5', refreshTime: 16 * 60 * 60 * 1000 },
+    { name: 'cave 6', refreshTime: 18 * 60 * 60 * 1000 },
+    { name: 'KON', refreshTime: 24 * 60 * 60 * 1000 },
+  ];
+
+  const initialTeams = [
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'],
+    ['大同大不同', '大同大不同', '大同大不同', 'Redfox', '大同大不同', '大同大不同', '大同大不同', 'Redfox'],
+    ['大同大不同', 'PromiseLand', 'Redfox', 'YOUZi', '大同大不同', 'Redfox'],
+  ];
+
+  const mergedTeams = initialTeams.map((team, index) => {
+    if (index === 0 || index === 1) {
+      return ['xPHxElite', 'SHICHIBUKAI', 'PromiseLand', 'Redfox', '大同大不同', 'NPH', '大同大不同', 'SPT', 'YOUZi', 'Redfox', '大同大不同'];
+    }
+    return team;
+  });
+
+  const [teams, setTeams] = useState(mergedTeams);
+
+  const handleTeamChange = (bossIndex: number, teamIndex: number, value: string) => {
+    const newTeams = [...teams];
+    newTeams[bossIndex][teamIndex] = value;
+    setTeams(newTeams);
+  };
+
+  const handleReset = (bossIndex: number) => {
+    const newTeams = [...teams];
+    const currentTeams = newTeams[bossIndex];
+    for (let i = 0; i < 2; i++) {
+      const firstTeam = currentTeams.shift();
+      if (firstTeam) {
+        currentTeams.push(firstTeam);
+      }
+    }
+    newTeams[bossIndex] = currentTeams;
+    setTeams(newTeams);
+  };
+
+  const teamOptions = ['PromiseLand', 'Redfox', '大同大不同', 'NPH', 'SPT', '畫墨閣', 'xPHxElite', 'SHICHIBUKAI', 'YOUZi', '待更改'];
+
+  const teamColors = {
+    'PromiseLand': 'bg-red-100',
+    'Redfox': 'bg-orange-100',
+    '大同大不同': 'bg-yellow-100',
+    'NPH': 'bg-green-100',
+    'SPT': 'bg-teal-100',
+    '畫墨閣': 'bg-blue-100',
+    'xPHxElite': 'bg-indigo-100',
+    'SHICHIBUKAI': 'bg-purple-100',
+    'YOUZi': 'bg-pink-100',
+    '待更改': 'bg-gray-100',
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-100 p-6">
+      <h1 className="text-4xl font-bold mb-6 text-gray-800">九之王BOSS刷新倒計時</h1>
+      <div className="flex flex-wrap justify-center w-full">
+        {bosses.map((boss, index) => (
+          <div key={boss.name} className="w-full sm:w-1/2 lg:w-1/3 p-2">
+            <BossTimer bossName={boss.name} initialTime={boss.refreshTime} team={teams[index][0]} onReset={() => handleReset(index)} />
+          </div>
+        ))}
+      </div>
+      <div className="w-full mt-8">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">隊伍BOSS刷新時間表</h2>
+        <table className="table-auto border-collapse border border-gray-400 w-full bg-white shadow-md rounded-lg">
+          <thead>
+            <tr className="bg-gray-200">
+              <th className="border border-gray-300 px-4 py-2 text-left">BOSS</th>
+              {Array.from({ length: 11 }, (_, i) => (
+                <th key={i} className="border border-gray-300 px-4 py-2 text-left">{i + 1}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {bosses.map((boss, bossIndex) => (
+              <tr key={boss.name} className="hover:bg-gray-100">
+                <td className="border border-gray-300 px-4 py-2 text-gray-700">{boss.name}</td>
+                {teams[bossIndex].map((team, teamIndex) => (
+                  <td key={teamIndex} className={`border border-gray-300 px-4 py-2 ${teamColors[team]}`}>
+                    <Select value={team} onValueChange={(value) => handleTeamChange(bossIndex, teamIndex, value)}>
+                      <SelectTrigger className={`w-full ${teamColors[team]}`}>
+                        <SelectValue placeholder="選擇隊伍" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teamOptions.map((option, index) => (
+                          <SelectItem key={index} value={option} className={teamColors[option]}>{option}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default BossTimers;
